@@ -1,0 +1,51 @@
+{
+    "name": "flare-react",
+    "version": "1.0.2",
+    "description": "React component to host and control Flare animations.",
+    "main": "build/FlareReact.js",
+    "scripts": {
+        "dev": "npx webpack --w",
+        "start": "webpack"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/2d-inc/Flare-React"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/2d-inc/Flare-React/issues"
+    },
+    "homepage": "https://github.com/2d-inc/Flare-React#readme",
+    "peerDependencies": {
+        "react": "^16.8.0",
+        "react-dom": "^16.8.0"
+    },
+    "devDependencies": {
+        "arraybuffer-loader": "^1.0.7",
+        "babel-core": "^6.26.3",
+        "babel-eslint": "^6.1.2",
+        "babel-loader": "^7.1.5",
+        "babel-plugin-module-resolver": "^3.1.1",
+        "babel-plugin-transform-decorators-legacy": "^1.3.5",
+        "babel-plugin-transform-object-rest-spread": "^6.26.0",
+        "babel-plugin-transform-runtime": "^6.23.0",
+        "babel-preset-env": "^1.7.0",
+        "babel-preset-es2016": "^6.24.1",
+        "babel-preset-react": "^6.24.1",
+        "eslint": "^3.19.0",
+        "eslint-loader": "^1.7.1",
+        "html-webpack-plugin": "^3.2.0",
+        "ifdef-loader": "^2.1.1",
+        "webpack": "^4.17.1",
+        "webpack-cli": "^3.2.3",
+        "gl-matrix": "^2.8.1",
+        "react-svg-loader": "^2.1.0",
+        "bezier-easing": "^2.1.0",
+        "react": "^16.8.4",
+        "react-dom": "^16.8.4"
+    },
+    "dependencies": {
+        "npm": "^6.9.0"
+    }
+}

@@ -1,0 +1,3 @@
+[submodule "dependencies/Flare-JS"]
+	path = dependencies/Flare-JS
+	url = git@github.com:2d-inc/Flare-JS.git
