@@ -4,8 +4,6 @@ A React component to display and animate your [Flare](https://www.2dimensions.co
 
 ## Installation
 
-Download to your project directory, add `README.md`, and commit:
-
 ```sh
 npm install flare-react
 ```
