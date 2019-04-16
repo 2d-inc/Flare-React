@@ -1,29 +1,29 @@
-import React from "react";
-import { ActorLoader, Graphics } from "flare";
+import React, { createRef } from "react";
+import { ActorLoader, Graphics } from "flarejs/build/Flare.min.js";
 import { vec2, mat2d } from "gl-matrix";
-import Logo from "./flare_logo.svg";
 
-export class FlareComponent extends React.Component {
+export default class FlareComponent extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, isLoading: false, hasActor: false };
+    this.state = { isLoading: false, hasActor: false };
 
     this._RuntimeGraphics = null;
-    this._ActorInstance = null;
+    this._ActorArtboard = null;
     this._RuntimeActor = null;
     this._IsRendering = false;
     this._LastAdvanceTime = Date.now();
     this._RuntimeAnimationIndex = -1;
     this._AnimationTime = 0;
-    this._OverrideAnimationPosition = null;
-    this._LastReportedAnimationPosition = -1;
+    this._LastPosition = -1;
     this._AdvanceSpeed = 0.0;
     this._TargetAdvanceSpeed = 0.0;
     this._ViewTransform = mat2d.create();
 
-    this.setCanvasRef = ref => {
-      this._Canvas = ref;
-    };
+    this.canvasRef = createRef();
+  }
+
+  get _Canvas() {
+    return this.canvasRef.current;
   }
 
   componentWillReceiveProps(nextProps) {
@@ -40,22 +40,25 @@ export class FlareComponent extends React.Component {
 
     if (nextProps.file !== this.props.file) {
       this.load(nextProps.file);
+    } else if (nextProps.artboardName != this.props.artboardName) {
+      this.initArtboard(nextProps.artboardName);
     }
   }
 
   componentDidMount() {
-    const { _Canvas } = this;
-    if (!_Canvas) {
-      console.log("Missing canvas");
+    if (!this._Canvas) {
+      this.props.onError && this.props.onError(Error("Missing Canvas"));
       return;
     }
 
+    this.initRuntimeGraphics();
+  }
+
+  initRuntimeGraphics() {
     try {
-      const runtimeGraphics = new Graphics(_Canvas);
-      this._RuntimeGraphics = runtimeGraphics;
+      this._RuntimeGraphics = new Graphics(this._Canvas);
     } catch (err) {
-      console.log("Error while init graphics", err);
-      this.setState({ hasError: true });
+      this.props.onError && this.props.onError(err);
       return;
     }
 
@@ -79,41 +82,48 @@ export class FlareComponent extends React.Component {
   load(file) {
     if (!file) {
       const graphics = this._RuntimeGraphics;
-      if (this._ActorInstance) {
-        this._ActorInstance.dispose(graphics);
-        this._ActorInstance = null;
+      if (this._ActorArtboard) {
+        this._ActorArtboard.dispose(graphics);
+        this._ActorArtboard = null;
       }
+
       if (this._RuntimeActor) {
         this._RuntimeActor.dispose(graphics);
         this._RuntimeActor = null;
       }
+
       if (graphics) {
         this.setState({ hasActor: false });
         graphics.clear([0, 0, 0, 0]);
         graphics.flush();
       }
+
       return;
     }
+
     const graphics = this._RuntimeGraphics;
     if (!graphics) {
       return;
     }
-    const loader = new ActorLoader();
-    loader.load(file, actor => {
+
+    new ActorLoader().load(file, actor => {
       if (!actor) {
         this.props.onError && this.props.onError();
         return;
       }
+
+      this.props.onLoad && this.props.onLoad();
 
       if (graphics !== this._RuntimeGraphics) {
         // Someone else is loading with this component now.
         return;
       }
 
-      if (this._ActorInstance) {
-        this._ActorInstance.dispose(this._RuntimeGraphics);
-        this._ActorInstance = null;
+      if (this._ActorArtboard) {
+        this._ActorArtboard.dispose(this._RuntimeGraphics);
+        this._ActorArtboard = null;
       }
+
       if (this._RuntimeActor) {
         this._RuntimeActor.dispose(this._RuntimeGraphics);
         this._RuntimeActor = null;
@@ -121,53 +131,59 @@ export class FlareComponent extends React.Component {
 
       this._RuntimeActor = actor;
       actor.initialize(graphics);
-      this._ActorInstance = actor.makeInstance();
-      if (this._ActorInstance) {
-        this._ActorInstance.initialize(graphics);
 
-        let viewCenter = actor._ViewCenter;
-        let viewWidth = actor._ViewWidth;
-        let viewHeight = actor._ViewHeight;
-        if (!viewCenter) {
-          this._ActorInstance.advance(0);
-
-          const aabb = this._ActorInstance.artboardAABB
-            ? this._ActorInstance.artboardAABB()
-            : this._ActorInstance.computeAABB();
-          viewCenter = [(aabb[0] + aabb[2]) / 2, (aabb[1] + aabb[3]) / 2];
-          viewWidth = aabb[2] - aabb[0];
-          viewHeight = aabb[3] - aabb[1];
-        }
-        this._ViewCenter = viewCenter;
-        this._ViewWidth = viewWidth;
-        this._ViewHeight = viewHeight;
-        this._RuntimeAnimationIndex = -1;
-        this._RuntimeAnimation = null;
-        this.props.onLoadedAnimations &&
-          this.props.onLoadedAnimations(this._ActorInstance._Animations);
-
-        let size = this.getCanvasSize();
-
-        graphics.setSize(size[0], size[1]);
-        this.setState({ isLoading: false, hasActor: true, hasError: false });
-        this.isLoading = false;
-        this.startRenderLoop();
-      }
+      this.initArtboard(this.props.artboardName);
     });
   }
 
   onGraphicsReady() {
     const { props } = this;
     const { file } = props;
-    this.isLoading = true;
     this.setState({ isLoading: true });
-
-    this.viewCenter = [0, 0];
-    this.viewWidth = 100;
-    this.viewHeight = 100;
 
     if (file) {
       this.load(file);
+    }
+  }
+
+  initArtboard(artboardName) {
+    const actor = this._RuntimeActor;
+    const graphics = this._RuntimeGraphics;
+
+    this._ActorArtboard = this._getActorArtboard(actor, artboardName);
+
+    if (this._ActorArtboard) {
+      this._ActorArtboard.initialize(graphics);
+
+      let viewCenter = actor._ViewCenter;
+      let viewWidth = actor._ViewWidth;
+      let viewHeight = actor._ViewHeight;
+      if (!viewCenter) {
+        this._ActorArtboard.advance(0);
+
+        const aabb = this._ActorArtboard.artboardAABB
+          ? this._ActorArtboard.artboardAABB()
+          : this._ActorArtboard.computeAABB();
+        viewCenter = [(aabb[0] + aabb[2]) / 2, (aabb[1] + aabb[3]) / 2];
+        viewWidth = aabb[2] - aabb[0];
+        viewHeight = aabb[3] - aabb[1];
+      }
+      this._ViewCenter = viewCenter;
+      this._ViewWidth = viewWidth;
+      this._ViewHeight = viewHeight;
+      this._RuntimeAnimationIndex = -1;
+      this._RuntimeAnimation = null;
+      this.props.onLoadedAnimations &&
+        this.props.onLoadedAnimations(this._ActorArtboard._Animations);
+
+      let size = this.getCanvasSize();
+
+      graphics.setSize(size[0], size[1]);
+      this.setState({
+        isLoading: false,
+        hasActor: true,
+      });
+      this.startRenderLoop();
     }
   }
 
@@ -185,9 +201,10 @@ export class FlareComponent extends React.Component {
     }
 
     if (!this._RuntimeGraphics) {
-      this.initRuntime();
+      this.initRuntimeGraphics();
       return;
     }
+
     this._LastAdvanceTime = Date.now();
     window.requestAnimationFrame(() => this.advance());
     this._IsRendering = true;
@@ -197,11 +214,11 @@ export class FlareComponent extends React.Component {
     let {
       _RuntimeGraphics: graphics,
       _RuntimeActor: actor,
-      _ActorInstance: actorInstance,
+      _ActorArtboard: actorArtboard,
       _ViewTransform: vt,
     } = this;
 
-    if (!graphics || !this._ActorInstance) {
+    if (!graphics || !actorArtboard) {
       this._IsRendering = false;
       return;
     }
@@ -251,10 +268,8 @@ export class FlareComponent extends React.Component {
     vt[5] =
       -viewCenter[1] * scale + h - padded_h / 2 - (padding.top || 0) * dpr;
 
-    let bg =
-      this.props.background ||
-      (actorInstance && actorInstance.color8) ||
-      this._Metadata.background;
+    let bg = this.props.background ||
+      (actorArtboard && actorArtboard.color8) || [0, 0, 0];
 
     graphics.clear([
       bg[0] / 255,
@@ -262,61 +277,99 @@ export class FlareComponent extends React.Component {
       bg[2] / 255,
       this.props.transparent ? 0.0 : 1.0,
     ]);
+
     graphics.setView(vt);
-    if (actorInstance) {
-      let animations = actor.animations;
+    if (actorArtboard) {
+      let animations = actorArtboard.animations;
+
       const { animationName } = this.props;
       let desiredAnimationIndex =
         animationName !== undefined
           ? animations.findIndex(animation => animation._Name === animationName)
           : -1;
+
       if (
-        desiredAnimationIndex < actorInstance.animations.length &&
+        desiredAnimationIndex < actorArtboard.animations.length &&
         desiredAnimationIndex !== this._RuntimeAnimationIndex
       ) {
-        if (actorInstance) {
-          actorInstance.dispose(graphics);
+        if (actorArtboard) {
+          actorArtboard.dispose(graphics);
         }
-        actorInstance = this._ActorInstance = actor.makeInstance();
-        actorInstance.initialize(graphics);
+
+        actorArtboard = this._ActorArtboard = this._getActorArtboard(
+          actor,
+          this.props.artboardName,
+        );
+        actorArtboard.initialize(graphics);
 
         this._RuntimeAnimationIndex = desiredAnimationIndex;
         this._RuntimeAnimation =
           desiredAnimationIndex !== -1
-            ? actorInstance.animations[desiredAnimationIndex]
+            ? actorArtboard.animations[desiredAnimationIndex]
             : null;
-        this._AnimationTime = 0;
+        this._AnimationTime =
+          (this.props.initialPosition || 0) * this._RuntimeAnimation._Duration;
+        this._RuntimeAnimation.apply(this._AnimationTime, actorArtboard, 1.0);
       }
 
       let runtimeAnimation = this._RuntimeAnimation;
       if (runtimeAnimation) {
-        let animationTime;
-        if (this._OverrideAnimationPosition !== null) {
-          animationTime = this._AnimationTime =
-            this._OverrideAnimationPosition * runtimeAnimation._Duration;
+        const { toPosition, animateToPosition } = this.props;
+        if (toPosition !== null) {
+          let toTime = toPosition * runtimeAnimation._Duration;
+          const diff = Math.abs(toTime - this._AnimationTime);
+          if (diff < 0.01) {
+            // if we're close enough, just jump to the right time
+            this._AnimationTime = toTime;
+          }
+
+          if (animateToPosition) {
+            if (toTime == this._AnimationTime) {
+              // nothing to do, we want to stay where we are
+              // but let's assign for clarity
+              this._AnimationTime = toTime;
+            } else {
+              // increment or decremenet by elapsed
+              this._AnimationTime +=
+                advanceSpeed *
+                elapsed *
+                (toTime < this._AnimationTime ? -1 : 1);
+            }
+          } else {
+            // we want to set a position without animating
+            this._AnimationTime = toTime;
+          }
         } else {
+          // otherwise, auto-play
           if (advanceSpeed > 0) {
-            this._AnimationTime +=
-              advanceSpeed * elapsed * (this.props.playbackSpeed || 1.0);
+            this._AnimationTime += advanceSpeed * elapsed;
             if (runtimeAnimation.loop) {
+              // and loop with modulo
               this._AnimationTime %= runtimeAnimation._Duration;
             } else if (this._AnimationTime > runtimeAnimation._Duration) {
+              // or just pause at the end
               this._AnimationTime = runtimeAnimation._Duration;
               this.props.onPaused && this.props.onPaused();
             }
           }
-          animationTime = this._AnimationTime;
         }
-        let animationPosition = animationTime / runtimeAnimation._Duration;
-        if (animationPosition !== this._LastReportedAnimationPosition) {
-          this._LastReportedAnimationPosition = animationPosition;
+
+        // given the calculated animation time, calculate position and notify subscriber
+        let calculatedPosition =
+          this._AnimationTime / runtimeAnimation._Duration;
+        if (calculatedPosition !== this._LastPosition) {
+          // cache position
+          this._LastPosition = calculatedPosition;
+          // notify
           this.props.onPositionChanged &&
-            this.props.onPositionChanged(animationPosition);
+            this.props.onPositionChanged(calculatedPosition);
         }
-        runtimeAnimation.apply(animationTime, actorInstance, 1.0);
+
+        // then update animation with the correct time
+        runtimeAnimation.apply(this._AnimationTime, actorArtboard, 1.0);
       }
-      actorInstance.advance(elapsed);
-      actorInstance.draw(graphics);
+      actorArtboard.advance(elapsed);
+      actorArtboard.draw(graphics);
     }
     graphics.flush();
 
@@ -328,35 +381,31 @@ export class FlareComponent extends React.Component {
     }
   }
 
+  _getActorArtboard(actor, artboardName) {
+    if (artboardName) {
+      return actor.getArtboard(artboardName).makeInstance();
+    } else {
+      return actor.makeInstance();
+    }
+  }
+
   componentDidUpdate() {
     this.updateSize();
   }
 
   render() {
-    const { setCanvasRef, props, state } = this;
-    const { width, height } = props;
-    const { hasActor } = state;
+    const { width, height } = this.props;
+    const { hasActor } = this.state;
     return (
-      <div
+      <canvas
+        ref={this.canvasRef}
+        className={this.props.className}
         style={{
-          position: "absolute",
           width: width + "px",
           height: height + "px",
+          display: hasActor ? null : "none",
         }}
-      >
-        {hasActor ? null : (
-          <Logo width="100%" height="100%" style={{ position: "absolute" }} />
-        )}
-        <canvas
-          ref={setCanvasRef}
-          style={{
-            position: "absolute",
-            width: width + "px",
-            height: height + "px",
-            display: hasActor ? null : "none",
-          }}
-        />
-      </div>
+      />
     );
   }
 }
