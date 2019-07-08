@@ -1,25 +1,23 @@
 {
-	"presets" : 
-	[
+	"presets": [
 		"env",
 		"react"
 	],
-	"plugins": 
-	[ 
+	"plugins": [
 		[
-			"module-resolver", 
+			"module-resolver",
 			{
-				"root":["./source"],
+				"root": ["./source"],
 				"alias":
 				{
 					"flare": "./dependencies/Flare-JS/source/Flare.js"
 				}
 			}
-		], 
-		"transform-object-rest-spread", 
+		],
+		"transform-object-rest-spread",
 		"transform-decorators-legacy",
 		[
-			"transform-runtime", 
+			"transform-runtime",
 			{
 				"helpers": false,
 				"polyfill": false,

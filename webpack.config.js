@@ -12,7 +12,7 @@ const config =
 	{
 		fs: "empty"
 	},
-	entry: 
+	entry:
 	{
 		Flare: APP_DIR + "/FlareComponent.js"
 	},
@@ -25,45 +25,45 @@ const config =
 	},
 	module:
 	{
-		rules :
-		[
-			{
-				test : /\.js$/,
-				use: [
-					{ loader: "babel-loader"},
-					{
-						loader: "ifdef-loader",
-						options: 
+		rules:
+			[
+				{
+					test: /\.js$/,
+					use: [
+						{ loader: "babel-loader" },
 						{
-							CanvasKitLocation: "embedded",
-							"ifdef-verbose": true,       // add this for verbose output
-							"ifdef-triple-slash": true 
+							loader: "ifdef-loader",
+							options:
+							{
+								CanvasKitLocation: "embedded",
+								"ifdef-verbose": true,       // add this for verbose output
+								"ifdef-triple-slash": true
+							}
 						}
-					}
-				]
-            },
-            {
-                test: /\.svg$/,
-                use: 
-                [
-                    {
-                        loader: "babel-loader"
-                    },
-                    {
-                        loader: "react-svg-loader",
-                        options: 
-                        {
-                            jsx: true
-                        }
-                    }
-                ]
-            },
-			{
-				test: /\.wasm$/,
-				type: "javascript/auto",
-				use: { loader: "arraybuffer-loader" }
-			}
-		]
+					]
+				},
+				{
+					test: /\.svg$/,
+					use:
+						[
+							{
+								loader: "babel-loader"
+							},
+							{
+								loader: "react-svg-loader",
+								options:
+								{
+									jsx: true
+								}
+							}
+						]
+				},
+				{
+					test: /\.wasm$/,
+					type: "javascript/auto",
+					use: { loader: "arraybuffer-loader" }
+				}
+			]
 	}
 };
 
