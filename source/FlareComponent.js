@@ -1,6 +1,18 @@
 import React, { createRef } from "react";
-import { ActorLoader, Graphics } from "flare";
+import { ActorLoader, Graphics, Dispatcher } from "flare";
 import { vec2, mat2d } from "gl-matrix";
+
+class Controller extends Dispatcher
+{
+	startRendering()
+	{
+		this.dispatch("startRendering");
+	}
+
+	initialize(artboard) {}
+	setViewTransform(transform) {}
+	advance(artboard, elapsed) { return false; }
+}
 
 export default class FlareComponent extends React.Component
 {
@@ -20,8 +32,16 @@ export default class FlareComponent extends React.Component
 		this._AdvanceSpeed = 0.0;
 		this._TargetAdvanceSpeed = 0.0;
 		this._ViewTransform = mat2d.create();
+		this._LastViewTransform = mat2d.create();
+
+		this.startRenderLoop = this.startRenderLoop.bind(this);
 
 		this.canvasRef = createRef();
+	}
+
+	static get Controller()
+	{
+		return Controller;
 	}
 
 	get _Canvas()
@@ -52,6 +72,18 @@ export default class FlareComponent extends React.Component
 		{
 			this.initArtboard(nextProps.artboardName);
 		}
+		if (nextProps.controller !== this.props.controller)
+		{
+			this.props.controller && this.props.controller.removeEventListener("startRendering", this.startRenderLoop);
+			if (nextProps.controller)
+			{
+				nextProps.controller.addEventListener("startRendering", this.startRenderLoop);
+				if (this._ActorArtboard)
+				{
+					nextProps.controller.initialize(this._ActorArtboard);
+				}
+			}
+		}
 	}
 
 	componentDidMount()
@@ -61,6 +93,8 @@ export default class FlareComponent extends React.Component
 			this.props.onError && this.props.onError(Error("Missing Canvas"));
 			return;
 		}
+		this.props.controller && this.props.controller.removeEventListener("startRendering", this.startRenderLoop);
+		this.props.controller && this.props.controller.addEventListener("startRendering", this.startRenderLoop);
 
 		this.initRuntimeGraphics();
 	}
@@ -186,6 +220,11 @@ export default class FlareComponent extends React.Component
 
 		if (this._ActorArtboard)
 		{
+			const { controller } = this.props;
+			if (controller)
+			{
+				controller.initialize(this._ActorArtboard);
+			}
 			this._ActorArtboard.initialize(graphics);
 
 			let viewCenter = actor._ViewCenter;
@@ -258,6 +297,7 @@ export default class FlareComponent extends React.Component
 			_RuntimeActor: actor,
 			_ActorArtboard: actorArtboard,
 			_ViewTransform: vt,
+			_LastViewTransform: lvt
 		} = this;
 
 		if (!graphics || !actorArtboard)
@@ -288,7 +328,7 @@ export default class FlareComponent extends React.Component
 			this._AdvanceSpeed = this._TargetAdvanceSpeed;
 		}
 
-		const { _AdvanceSpeed: advanceSpeed } = this;
+		let { _AdvanceSpeed: advanceSpeed } = this;
 
 		let viewCenter = this._ViewCenter;
 		let viewWidth = this._ViewWidth;
@@ -330,7 +370,17 @@ export default class FlareComponent extends React.Component
 		{
 			let animations = actorArtboard.animations;
 
-			const { animationName } = this.props;
+			const { animationName, controller } = this.props;
+
+			if (!mat2d.equals(vt, lvt))
+			{
+				mat2d.copy(lvt, vt);
+				if (controller)
+				{
+					controller.setViewTransform(vt);
+				}
+			}
+
 			let desiredAnimationIndex =
 				animationName !== undefined ?
 				animations.findIndex(animation => animation._Name === animationName) :
@@ -434,6 +484,13 @@ export default class FlareComponent extends React.Component
 
 				// then update animation with the correct time
 				runtimeAnimation.apply(this._AnimationTime, actorArtboard, 1.0);
+			}
+			if (controller)
+			{
+				if (!controller.advance(actorArtboard, elapsed))
+				{
+					advanceSpeed = 0;
+				}
 			}
 			actorArtboard.advance(elapsed);
 			actorArtboard.draw(graphics);
