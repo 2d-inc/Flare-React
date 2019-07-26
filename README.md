@@ -44,14 +44,14 @@ class PenguinController extends FlareComponent.Controller
 
 	advance(artboard, elapsed)
 	{
-        // advance the walk time
+		// advance the walk time
 		this._WalkTime += elapsed;
 		const { _MusicWalk: musicWalk, _Walk: walk, _WalkTime: walkTime } = this;
 
-        // mix the two animations together by applying one and then the other (note that order matters).
-        walk.apply(walkTime % walk.duration, artboard, 1.0);
-        // if you want to slowly disable the head bobbing (musicWalk animation) you could ramp down the 
-        // final argument (the mix argument) to 0.0 over some time. For now we're mixing at full strength.
+		// mix the two animations together by applying one and then the other (note that order matters).
+		walk.apply(walkTime % walk.duration, artboard, 1.0);
+		// if you want to slowly disable the head bobbing (musicWalk animation) you could ramp down the 
+		// final argument (the mix argument) to 0.0 over some time. For now we're mixing at full strength.
 		musicWalk.apply(walkTime % musicWalk.duration, artboard, 1.0);
 
 		// keep rendering
