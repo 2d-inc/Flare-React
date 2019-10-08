@@ -402,6 +402,11 @@ export default class FlareComponent extends React.Component
 				);
 				actorArtboard.initialize(graphics);
 
+				if(controller) 
+				{
+					controller.initialize(this._ActorArtboard);
+				}
+
 				this._RuntimeAnimationIndex = desiredAnimationIndex;
 				this._RuntimeAnimation =
 					desiredAnimationIndex !== -1 ?
