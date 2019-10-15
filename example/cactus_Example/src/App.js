@@ -6,7 +6,7 @@ import ActorNodeSolo from 'flare-react/dependencies/Flare-JS/source/ActorNodeSol
 import ActorBone from 'flare-react/dependencies/Flare-JS/source/ActorBone.js';
 import CustomProperty from 'flare-react/dependencies/Flare-JS/source/CustomProperty.js';
 import soundfile from './huh_sound_cartoon.wav'; 
-
+import HappySoundFile from './happy_sound_cartoon.wav'; 
 
  
 class MyFlareController extends FlareComponent.Controller
@@ -29,6 +29,7 @@ class MyFlareController extends FlareComponent.Controller
     this._AnimTime = 0;
 
     this.sound = new Audio(soundfile); 
+    this.happySound = new Audio(HappySoundFile);
   }
 
   initialize(artboard)
@@ -39,13 +40,8 @@ class MyFlareController extends FlareComponent.Controller
     }
     
     this._MyNode = this._Artboard.getNode("Scale Node_Special Property");
-    for (var props in this._MyNode._CustomProperties)
-    {
-      console.log(props.propertyType);
-    }
 
-
-    this._MyBone = artboard.getNode("Bone");  
+    this._MyBone = this._Artboard.getNode("Bone");  
 
     this._ActorAnimator = this._Artboard.getAnimation("Mustache_New");
     this._ProgressTracker = this._Artboard.getAnimation("Mustache_New");
@@ -55,12 +51,11 @@ class MyFlareController extends FlareComponent.Controller
   {
     this._AnimTime += elapsed *1;
 
-    var _animationEvents = [];
+    let _animationEvents = [];
 
     
     if (this._CanPlay === true)
-    {
-       
+    {       
       this._ActorAnimator.apply(this._AnimTime % this._ActorAnimator.duration, artboard, 1);
     }
     if (this._SoloIdx !== this._CurrSoloIdx)
@@ -70,15 +65,11 @@ class MyFlareController extends FlareComponent.Controller
 
       this._CanPlay = true;
       this._SmileTime = 0;
-      this._CurrSoloIdx = this._SoloIdx;
-
-      this.sound.play();
-
-      
+      this._CurrSoloIdx = this._SoloIdx;   
      
     }
     
-    var _currLayerAnim = this._SmileTime;
+    let _currLayerAnim = this._SmileTime;
 
     this._SmileTime += elapsed * 1;
     if (this._SmileTime > this._ActorAnimator.duration)
@@ -86,26 +77,39 @@ class MyFlareController extends FlareComponent.Controller
       this._CanPlay = false;
     }
 
-    //console.log(artboard.components); 
-    //this._ProgressTracker.triggerEvents(artboard.components, _currLayerAnim, this._SmileTime, _animationEvents);
+    for (let props in this._MyNode._CustomProperties)
+    {      
+      switch (this._MyNode._CustomProperties[props]._Name)
+      {
+         
+        case "happy_sound":
+          ///play our sound when the custom property changes
+          if (this._MyNode._CustomProperties[props]._Value === true){
+            this.happySound.play();
+          }
+          break;
+      
+      }
+     
+    }
+ 
+    this._ProgressTracker.triggerEvents(artboard._Components, _currLayerAnim, this._SmileTime, _animationEvents);
     
-    for (var event in _animationEvents)
+    for (let event in _animationEvents)
     {
-      switch (event.name)
+      switch (_animationEvents[event].name)
       {
         case "Event":
           ///play our sound when the event happens
-          this.sound.play();
+          this.sound.play(); 
           break;
-        default:
-          return;
       }
     }
     
     return true;
   }
  
-  changeSoloNode = (Value) =>
+  changeSoloNode = () =>
   {    
     this._SoloIdx ++;
     if (this._SoloIdx > 5){
@@ -125,7 +129,6 @@ export default class MyComponent extends React.Component
       myFlareController: new MyFlareController()
     }; 
     this.Update_Stache = this.Update_Stache.bind(this);
-    //this.sound = new Audio(soundfile); 
   }
 
   render()
@@ -141,10 +144,7 @@ export default class MyComponent extends React.Component
 
   Update_Stache = () =>
   {
-   // this.sound.play();
-
-    this.state.myFlareController.changeSoloNode(2);
-
+    this.state.myFlareController.changeSoloNode();
   }
 
  
