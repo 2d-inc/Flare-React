@@ -93,6 +93,7 @@ class MyFlareController extends FlareComponent.Controller
      
     }
  
+   
     this._ProgressTracker.triggerEvents(artboard._Components, _currLayerAnim, this._SmileTime, _animationEvents);
     
     for (let event in _animationEvents)
