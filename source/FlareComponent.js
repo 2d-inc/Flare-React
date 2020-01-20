@@ -49,7 +49,7 @@ export default class FlareComponent extends React.Component
 		return this.canvasRef.current;
 	}
 
-	componentWillReceiveProps(nextProps)
+	UNSAFE_componentWillReceiveProps(nextProps)
 	{
 		if (nextProps.isPaused !== this.props.isPaused)
 		{
