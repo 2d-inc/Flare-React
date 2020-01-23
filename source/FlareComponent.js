@@ -49,7 +49,7 @@ export default class FlareComponent extends React.Component
 		return this.canvasRef.current;
 	}
 
-	componentWillReceiveProps(nextProps)
+	/*componentWillReceiveProps(nextProps)
 	{
 		if (nextProps.isPaused !== this.props.isPaused)
 		{
@@ -81,6 +81,39 @@ export default class FlareComponent extends React.Component
 				if (this._ActorArtboard)
 				{
 					nextProps.controller.initialize(this._ActorArtboard);
+				}
+			}
+		}
+	}*/
+	componentDidUpdate(prevProps, prevState) 
+	{
+		if (this.props.isPaused !== prevProps.isPaused) 
+		{		
+			if (!prevProps.isPaused &&
+				this._RuntimeAnimation &&
+				this._AnimationTime === this._RuntimeAnimation._Duration)
+			{
+				this._AnimationTime = 0.0;
+			}
+			this.startRenderLoop();
+		}
+		if (this.props.file !== prevProps.file)
+		{
+			this.load(prevProps.file);
+		}
+		else if (this.props.artboardName != prevProps.artboardName)
+		{
+			this.initArtboard(prevProps.artboardName);
+		}
+		if (this.props.controller !== prevProps.controller)
+		{
+			this.props.controller && this.props.controller.removeEventListener("startRendering", this.startRenderLoop);
+			if (prevProps.controller)
+			{
+				prevProps.controller.addEventListener("startRendering", this.startRenderLoop);
+				if (this._ActorArtboard)
+				{
+					prevProps.controller.initialize(this._ActorArtboard);
 				}
 			}
 		}
