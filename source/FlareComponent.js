@@ -49,42 +49,6 @@ export default class FlareComponent extends React.Component
 		return this.canvasRef.current;
 	}
 
-	/*componentWillReceiveProps(nextProps)
-	{
-		if (nextProps.isPaused !== this.props.isPaused)
-		{
-			if (
-				!nextProps.isPaused &&
-				this._RuntimeAnimation &&
-				this._AnimationTime === this._RuntimeAnimation._Duration
-			)
-			{
-				this._AnimationTime = 0.0;
-			}
-			this.startRenderLoop();
-		}
-
-		if (nextProps.file !== this.props.file)
-		{
-			this.load(nextProps.file);
-		}
-		else if (nextProps.artboardName != this.props.artboardName)
-		{
-			this.initArtboard(nextProps.artboardName);
-		}
-		if (nextProps.controller !== this.props.controller)
-		{
-			this.props.controller && this.props.controller.removeEventListener("startRendering", this.startRenderLoop);
-			if (nextProps.controller)
-			{
-				nextProps.controller.addEventListener("startRendering", this.startRenderLoop);
-				if (this._ActorArtboard)
-				{
-					nextProps.controller.initialize(this._ActorArtboard);
-				}
-			}
-		}
-	}*/
 	componentDidUpdate(prevProps, prevState) 
 	{
 		if (this.props.isPaused !== prevProps.isPaused) 
