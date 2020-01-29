@@ -1,14 +1,15 @@
 import React from 'react';
-import cactus from './Cactus_No_Joy.flr';
 import './App.css';
+
 import FlareComponent from 'flare-react';
-import ActorNodeSolo from 'flare-react/dependencies/Flare-JS/source/ActorNodeSolo.js';
+import cactus from './Cactus_No_Joy.flr';
+import flutter from './Flutter_Celebration.flr';
+import ActorNodeSolo from '../node_modules/flare-react/dependencies/Flare-JS/source/ActorNodeSolo';
 import ActorBone from 'flare-react/dependencies/Flare-JS/source/ActorBone.js';
 import CustomProperty from 'flare-react/dependencies/Flare-JS/source/CustomProperty.js';
 import soundfile from './huh_sound_cartoon.wav'; 
 import HappySoundFile from './happy_sound_cartoon.wav'; 
 
- 
 class MyFlareController extends FlareComponent.Controller
 {
   constructor()
@@ -51,7 +52,7 @@ class MyFlareController extends FlareComponent.Controller
   {
     this._AnimTime += elapsed *1;
 
-    let _animationEvents = [];
+    //let _animationEvents = [];
 
     
     if (this._CanPlay === true)
@@ -69,7 +70,7 @@ class MyFlareController extends FlareComponent.Controller
      
     }
     
-    let _currLayerAnim = this._SmileTime;
+   // let _currLayerAnim = this._SmileTime;
 
     this._SmileTime += elapsed * 1;
     if (this._SmileTime > this._ActorAnimator.duration)
@@ -77,7 +78,7 @@ class MyFlareController extends FlareComponent.Controller
       this._CanPlay = false;
     }
 
-    for (let props in this._MyNode._CustomProperties)
+    /*for (let props in this._MyNode._CustomProperties)
     {      
       switch (this._MyNode._CustomProperties[props]._Name)
       {
@@ -88,13 +89,15 @@ class MyFlareController extends FlareComponent.Controller
             this.happySound.play();
           }
           break;
+          default:
+            break;
       
       }
      
-    }
+    }*/
  
    
-    this._ProgressTracker.triggerEvents(artboard._Components, _currLayerAnim, this._SmileTime, _animationEvents);
+    /*this._ProgressTracker.triggerEvents(artboard._Components, _currLayerAnim, this._SmileTime, _animationEvents);
     
     for (let event in _animationEvents)
     {
@@ -104,18 +107,21 @@ class MyFlareController extends FlareComponent.Controller
           ///play our sound when the event happens
           this.sound.play(); 
           break;
+          default:
+            break;
       }
-    }
+    }*/
     
     return true;
   }
- 
+
   changeSoloNode = () =>
   {    
     this._SoloIdx ++;
     if (this._SoloIdx > 5){
       this._SoloIdx = 1;
     }
+    console.log(this._SoloIdx);
   } 
 }
 
@@ -126,27 +132,45 @@ export default class MyComponent extends React.Component
     super(props);
 
     this.state = {
-      
+      myfile: cactus,
       myFlareController: new MyFlareController()
     }; 
     this.Update_Stache = this.Update_Stache.bind(this);
   }
 
   render()
-  {
-     
+  {    
     return (
       <div>
-        <FlareComponent width={400} height={400} animationName="Idle" file={cactus} controller={this.state.myFlareController} />
-        <button onClick={this.Update_Stache}>Click Me!</button>
+        <FlareComponent width={500} height={500} animationName="Idle" file={this.state.myfile} controller={this.state.myFlareController} />
+        
+        <button onClick={this.onChange.bind(this)}>Click Me!</button>
         </div>
     );
   }  
-
+//<button onClick={this.Update_Stache}>Click Me!</button>
+  onChange(e) {
+    this.setState({[e.target.id]: e.target.value},
+      () => {
+        if (this.state.myfile === flutter) {
+          this.setState({ myfile: cactus });
+        } else {
+          this.setState({ myfile: flutter });
+        }
+      }
+    );
+    console.log(this.state.myfile);
+ }
   Update_Stache = () =>
   {
-    this.state.myFlareController.changeSoloNode();
+    
+    //this.state.myFlareController.changeSoloNode();
+    this.setState({ 
+      
+     myfile: flutter,
+     });
+    
+     console.log("pressed");
   }
-
- 
-} 
+   
+}
