@@ -1,6 +1,6 @@
 {
     "name": "flare-react",
-    "version": "1.0.7",
+    "version": "2.1.0",
     "description": "React component to host and control Flare animations.",
     "main": "build/FlareReact.js",
     "scripts": {

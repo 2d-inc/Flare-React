@@ -49,12 +49,36 @@ export default class FlareComponent extends React.Component
 		return this.canvasRef.current;
 	}
 
-	componentWillReceiveProps(nextProps)
-	{
-		if (nextProps.isPaused !== this.props.isPaused)
+	//just testing out the load on a new file
+	componentDidUpdate(prevProps) {
+		if (this.props.file !== prevProps.file) {
+			console.log(this.props.file);
+			this.load(this.props.file);
+		}
+	  }
+	/*
+	** tried this to get the props to update, it was a no go too
+	static getDerivedStateFromProps(nextProps, prevState){
+		if(nextProps.file!==prevState.file){
+		   return {file : nextProps.file};
+		}
+		else return null;
+	  }
+	componentDidUpdate(prevProps, prevState) {
+		if (prevState.file !== this.state.file) {
+			console.log(this.state.file);
+		  this.load(this.state.file);
+		}
+	  }
+	  */
+	/*
+	** updating to this.props.file didn't update
+	componentDidUpdate(prevProps, prevState) {
+		
+		if (prevProps.isPaused !== this.props.isPaused)
 		{
 			if (
-				!nextProps.isPaused &&
+				!prevProps.isPaused &&
 				this._RuntimeAnimation &&
 				this._AnimationTime === this._RuntimeAnimation._Duration
 			)
@@ -64,8 +88,45 @@ export default class FlareComponent extends React.Component
 			this.startRenderLoop();
 		}
 
+		if (prevProps.file !== this.props.file)
+		{
+			console.log(this.props.file);
+			this.load(this.props.file);
+		}
+		else if (prevProps.artboardName != this.props.artboardName)
+		{
+			this.initArtboard(this.props.artboardName);
+		}
+		if (prevProps.controller !== this.props.controller)
+		{
+			this.props.controller && this.props.controller.removeEventListener("startRendering", this.startRenderLoop);
+			if (this.props.controller)
+			{
+				this.props.controller.addEventListener("startRendering", this.startRenderLoop);
+				if (this._ActorArtboard)
+				{
+					this.props.controller.initialize(this._ActorArtboard);
+				}
+			}
+		}
+	  }*/
+
+	/*UNSAFE_componentWillReceiveProps(nextProps)
+	{
+		if (nextProps.isPaused !== this.props.isPaused)
+		{
+			if (!nextProps.isPaused &&
+				this._RuntimeAnimation &&
+				this._AnimationTime === this._RuntimeAnimation._Duration)
+			{
+				this._AnimationTime = 0.0;
+			}
+			this.startRenderLoop();
+		}
+
 		if (nextProps.file !== this.props.file)
 		{
+			console.log(nextProps.file);
 			this.load(nextProps.file);
 		}
 		else if (nextProps.artboardName != this.props.artboardName)
@@ -84,7 +145,7 @@ export default class FlareComponent extends React.Component
 				}
 			}
 		}
-	}
+	}*/
 
 	componentDidMount()
 	{
